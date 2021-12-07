@@ -9,9 +9,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.time.Duration;
 import java.util.*;
 
@@ -37,21 +35,17 @@ public class Main {
             for (ConsumerRecord<String, String> record : records) {
                     TopicMessageStock topicMessageStock = new Gson().fromJson(record.value(),TopicMessageStock.class);
                     stocks.put(record.key(),topicMessageStock);
-                System.out.printf("key = %s, value = %s%n", record.key(), record.value());
-            }
-            Timer timer = new javax.swing.Timer(5000, new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                  InitializeTable initializeTable = new InitializeTable(stocks);
-                    try {
-                        OutputTable.writeTable(InitializeFiles.path,initializeTable.tt);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
+                Timer timer = new javax.swing.Timer(5000, new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (stocks.size() > 0) {
+                            InitializeTable initializeTable = new InitializeTable(stocks);
+                        }
                     }
-                }
-            });
-            timer.setRepeats(true);
-            timer.start();
+                });
+                timer.setRepeats(true);
+                timer.start();
+            }
         }
     }
     private static class TopicMessageStock {
@@ -109,14 +103,19 @@ public class Main {
             TextTable tt = new TextTable(labels, data);
             tt.setAddRowNumbering(true);
             tt.setSort(0);
+//            tt.printTable();
+            try {
+                OutputTable.writeTable(InitializeFiles.path, tt);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
-
     }
     public static class OutputTable {
         public static void writeTable(String path, TextTable tt) throws IOException {
-            FileWriter writer = new FileWriter(path + File.separator + "table.txt");
-            writer.write(tt.toString());
-            writer.close();
+            FileOutputStream outfile=new FileOutputStream(path + File.separator + "table.txt");
+            PrintStream p = new PrintStream( outfile);
+            tt.printTable(p, 0);
         }
     }
 
